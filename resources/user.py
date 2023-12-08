@@ -74,6 +74,14 @@ class UserLoginResource(Resource) :
 
             result_list = cursor.fetchall()
             
+            if len(result_list) == 0 :
+                return {"error" : "등록된 회원이 아닙니다."}, 400
+
+            i = 0
+            for row in result_list :
+                result_list[i]['createdAt'] = row['createdAt'].isoformat()                
+                i = i + 1
+
             cursor.close()
             connection.close()
 
@@ -82,9 +90,6 @@ class UserLoginResource(Resource) :
             cursor.close()
             connection.close()
             return {"result" : "fail", "error" : str(e)}, 500
-        
-        if len(result_list) == 0 :
-            return {"error" : "등록된 회원이 아닙니다."}, 400
         
         check = check_password(data["password"], result_list[0]["password"])
 

@@ -10,20 +10,21 @@ from email_validator import validate_email, EmailNotValidError
 class FollowResource(Resource) :
     # 친구 맺기
     @jwt_required()
-    def post(self, user_id) :
-        
-        my_id = get_jwt_identity()
+    def post(self) :
+        data = request.get_json()
+
+        user_id = get_jwt_identity()
 
         try :
             connection = get_connection()
 
             query = '''
                     insert into follow
-                    (follower_id, followee_id)
+                    (followerId, followeeId)
                     values
                     (%s, %s);
                     '''
-            record = (my_id, user_id)
+            record = (user_id, data["followeeId"])
             cursor = connection.cursor()
             cursor.execute(query, record)
             connection.commit()
@@ -38,7 +39,8 @@ class FollowResource(Resource) :
             return {"result" : "fail", "error" : str(e)}, 500
 
         return {"result" : "success"}, 200
-    
+
+class FollowQuitResource(Resource) :
     # 친구 끊기
     @jwt_required()
     def delete(self, user_id) :
@@ -50,7 +52,7 @@ class FollowResource(Resource) :
 
             query ='''
                     delete from follow
-                    where follower_id = %s and followee_id = %s;
+                    where followerId = %s and followeeId = %s;
                     '''
             record = (my_id, user_id)
             cursor = connection.cursor()
@@ -67,8 +69,9 @@ class FollowResource(Resource) :
             return {"result" : "fail", "error" : str(e)}, 500
         
         return {"result" : "success"}, 200
-    
+
 class FollowMemoResource(Resource) :
+    # 내 친구 메모만 불러오기
     @jwt_required()
     def get(self) :
 
@@ -81,8 +84,8 @@ class FollowMemoResource(Resource) :
                     select * 
                     from summary s
                     join follow f
-                    on s.userId = f.followee_id
-                    where f.follower_id = %s;
+                    on s.userId = f.followeeId
+                    where f.followerId = %s;
                     '''
             record = (user_id, )
             cursor = connection.cursor(dictionary=True)
